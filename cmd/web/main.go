@@ -7,14 +7,16 @@ import (
 	"net/http"
 	"os"
 	"snippetbox/internal/models"
+	"text/template"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 type app struct {
-	errLogger  *log.Logger
-	infoLogger *log.Logger
-	snippets   *models.SnippetModel
+	errLogger     *log.Logger
+	infoLogger    *log.Logger
+	snippets      *models.SnippetModel
+	templaceCache map[string]*template.Template
 }
 
 var config struct {
@@ -33,10 +35,23 @@ func main() {
 
 	db, err := openDB(config.dsn)
 
+	if err != nil {
+		errLogger.Fatal(err)
+	}
+
+	defer db.Close()
+
+	templateCache, err := newTemplateCache()
+
+	if err != nil {
+		errLogger.Fatal(err)
+	}
+
 	app := app{
-		errLogger:  errLogger,
-		infoLogger: infoLogger,
-		snippets:   &models.SnippetModel{DB: db},
+		errLogger:     errLogger,
+		infoLogger:    infoLogger,
+		snippets:      &models.SnippetModel{DB: db},
+		templaceCache: templateCache,
 	}
 
 	// use custom logger for server
@@ -45,12 +60,6 @@ func main() {
 		ErrorLog: errLogger,
 		Handler:  app.routes(),
 	}
-
-	if err != nil {
-		errLogger.Fatal(err)
-	}
-
-	defer db.Close()
 
 	infoLogger.Printf("Started listening on: %s", config.addr)
 	err = srv.ListenAndServe()

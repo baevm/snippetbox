@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"snippetbox/internal/models"
 	"strconv"
-	"text/template"
 )
 
 func (app *app) Home(w http.ResponseWriter, r *http.Request) {
@@ -17,32 +16,17 @@ func (app *app) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := app.snippets.Latest()
+	snippets, err := app.snippets.Latest()
 
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-		"./ui/html/pages/home.tmpl.html",
-	}
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
 
-	p, err := template.ParseFiles(files...)
-
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	err = p.ExecuteTemplate(w, "base", nil)
-
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+	app.render(w, http.StatusOK, "home.tmpl.html", data)
 }
 
 func (app *app) SnippetView(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +48,10 @@ func (app *app) SnippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%+v", snippet)
+	data := app.newTemplateData(r)
+	data.Snippet = snippet
+
+	app.render(w, http.StatusOK, "view.tmpl.html", data)
 }
 
 func (app *app) SnippetCreate(w http.ResponseWriter, r *http.Request) {
