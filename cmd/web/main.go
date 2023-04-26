@@ -1,79 +1,72 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
+	"snippetbox/internal/models"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type app struct {
 	errLogger  *log.Logger
 	infoLogger *log.Logger
+	snippets   *models.SnippetModel
 }
 
 var config struct {
 	addr string
+	dsn  string
 }
 
 func main() {
 	flag.StringVar(&config.addr, "addr", ":5000", "HTTP network address")
+	flag.StringVar(&config.dsn, "dsn", "root:password@/snippetbox?parseTime=true", "MySQL connect name")
+
 	flag.Parse()
 
 	infoLogger := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errLogger := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
+	db, err := openDB(config.dsn)
+
 	app := app{
 		errLogger:  errLogger,
 		infoLogger: infoLogger,
+		snippets:   &models.SnippetModel{DB: db},
 	}
-
-	mux := http.NewServeMux()
-
-	// file server that serves ui/static folder
-	fileServer := http.FileServer(neuteredFileSystem{http.Dir("/ui/static/")})
-
-	mux.Handle("/static", http.NotFoundHandler())
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("/", app.Home)
-	mux.HandleFunc("/snippet/view/", app.SnippetView)
-	mux.HandleFunc("/snippet/create", app.SnippetCreate)
 
 	// use custom logger for server
 	srv := &http.Server{
 		Addr:     config.addr,
 		ErrorLog: errLogger,
-		Handler:  mux,
+		Handler:  app.routes(),
 	}
 
+	if err != nil {
+		errLogger.Fatal(err)
+	}
+
+	defer db.Close()
+
 	infoLogger.Printf("Started listening on: %s", config.addr)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	errLogger.Fatal(err)
 }
 
-type neuteredFileSystem struct {
-	fs http.FileSystem
-}
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dsn)
 
-func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
-	f, err := nfs.fs.Open(path)
 	if err != nil {
 		return nil, err
 	}
 
-	s, _ := f.Stat()
-	if s.IsDir() {
-		index := filepath.Join(path, "index.html")
-		if _, err := nfs.fs.Open(index); err != nil {
-			closeErr := f.Close()
-			if closeErr != nil {
-				return nil, closeErr
-			}
-
-			return nil, err
-		}
+	if err := db.Ping(); err != nil {
+		return nil, err
 	}
 
-	return f, nil
+	return db, nil
 }
