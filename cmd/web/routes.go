@@ -3,9 +3,11 @@ package main
 import (
 	"net/http"
 	"path/filepath"
+
+	"github.com/justinas/alice"
 )
 
-func (app *app) routes() *http.ServeMux {
+func (app *app) routes() http.Handler {
 	mux := http.NewServeMux()
 
 	// file server that serves ui/static folder
@@ -17,7 +19,9 @@ func (app *app) routes() *http.ServeMux {
 	mux.HandleFunc("/snippet/view", app.SnippetView)
 	mux.HandleFunc("/snippet/create", app.SnippetCreate)
 
-	return mux
+	middlewares := alice.New(app.recoverPanic, app.logRequests, headerMiddleware)
+
+	return middlewares.Then(mux)
 }
 
 type neuteredFileSystem struct {
