@@ -21,6 +21,7 @@ func (app *app) routes() http.Handler {
 	router.Handle("/static/*", http.StripPrefix("/static", fileServer))
 	router.Get("/", app.Home)
 	router.Get("/snippet/view/{id}", app.SnippetView)
+	router.Get("/snippet/create", app.SnippetCreate)
 	router.Post("/snippet/create", app.SnippetCreatePost)
 
 	middlewares := alice.New(app.recoverPanic, app.logRequests, headerMiddleware)
