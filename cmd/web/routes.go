@@ -2,50 +2,28 @@ package main
 
 import (
 	"net/http"
-	"path/filepath"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/justinas/alice"
 )
 
 func (app *app) routes() http.Handler {
-	mux := http.NewServeMux()
+	router := chi.NewRouter()
 
-	// file server that serves ui/static folder
+	// custom not found
+	router.NotFound(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.notFound(w)
+	}))
+
+	// file server that serves static content
 	fileServer := http.FileServer(neuteredFileSystem{http.Dir("./ui/static/")})
 
-	mux.Handle("/static", http.NotFoundHandler())
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("/", app.Home)
-	mux.HandleFunc("/snippet/view", app.SnippetView)
-	mux.HandleFunc("/snippet/create", app.SnippetCreate)
+	router.Handle("/static/*", http.StripPrefix("/static", fileServer))
+	router.Get("/", app.Home)
+	router.Get("/snippet/view/{id}", app.SnippetView)
+	router.Post("/snippet/create", app.SnippetCreatePost)
 
 	middlewares := alice.New(app.recoverPanic, app.logRequests, headerMiddleware)
 
-	return middlewares.Then(mux)
-}
-
-type neuteredFileSystem struct {
-	fs http.FileSystem
-}
-
-func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
-	f, err := nfs.fs.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	s, _ := f.Stat()
-	if s.IsDir() {
-		index := filepath.Join(path, "index.html")
-		if _, err := nfs.fs.Open(index); err != nil {
-			closeErr := f.Close()
-			if closeErr != nil {
-				return nil, closeErr
-			}
-
-			return nil, err
-		}
-	}
-
-	return f, nil
+	return middlewares.Then(router)
 }

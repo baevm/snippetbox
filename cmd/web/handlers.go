@@ -6,16 +6,11 @@ import (
 	"net/http"
 	"snippetbox/internal/models"
 	"strconv"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func (app *app) Home(w http.ResponseWriter, r *http.Request) {
-	// servemux "/" working like catch all
-	// we need to check if path is really "/"
-	if r.URL.Path != "/" {
-		app.notFound(w)
-		return
-	}
-
 	snippets, err := app.snippets.Latest()
 
 	if err != nil {
@@ -30,7 +25,7 @@ func (app *app) Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *app) SnippetView(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 
 	if err != nil || id < 1 {
 		app.notFound(w)
@@ -54,17 +49,7 @@ func (app *app) SnippetView(w http.ResponseWriter, r *http.Request) {
 	app.render(w, http.StatusOK, "view.tmpl.html", data)
 }
 
-func (app *app) SnippetCreate(w http.ResponseWriter, r *http.Request) {
-	// we need to check for method
-	// because servemux doesnt support rest
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		// http error shortcut
-		// for WriteHeader, Write
-		app.clientError(w, http.StatusMethodNotAllowed)
-		return
-	}
-
+func (app *app) SnippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	title := "Ultra title"
 	content := "Hey content snippet LOL"
 	expires := 7
@@ -76,5 +61,9 @@ func (app *app) SnippetCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+}
+
+func (app *app) SnippetCreate(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display the form for creating a new snippet..."))
 }
