@@ -66,6 +66,7 @@ func (app *app) SnippetCreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// validating
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cant be empty")
 	form.CheckField(validator.NotBlank(form.Content), "content", "This field cant be empty")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cant be more than 100 characters length")
@@ -84,6 +85,8 @@ func (app *app) SnippetCreatePost(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
+
+	app.sessionManager.Put(r.Context(), "flash", "Snippet succesfully created!")
 
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }

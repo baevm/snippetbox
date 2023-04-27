@@ -8,17 +8,21 @@ import (
 	"os"
 	"snippetbox/internal/models"
 	"text/template"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 type app struct {
-	errLogger     *log.Logger
-	infoLogger    *log.Logger
-	snippets      *models.SnippetModel
-	templaceCache map[string]*template.Template
-	formDecoder   *form.Decoder
+	errLogger      *log.Logger
+	infoLogger     *log.Logger
+	snippets       *models.SnippetModel
+	templaceCache  map[string]*template.Template
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 var config struct {
@@ -29,7 +33,6 @@ var config struct {
 func main() {
 	flag.StringVar(&config.addr, "addr", ":5000", "HTTP network address")
 	flag.StringVar(&config.dsn, "dsn", "root:password@/snippetbox?parseTime=true", "MySQL connect name")
-
 	flag.Parse()
 
 	infoLogger := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -50,13 +53,17 @@ func main() {
 	}
 
 	formDecoder := form.NewDecoder()
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
 
 	app := app{
-		errLogger:     errLogger,
-		infoLogger:    infoLogger,
-		snippets:      &models.SnippetModel{DB: db},
-		templaceCache: templateCache,
-		formDecoder:   formDecoder,
+		errLogger:      errLogger,
+		infoLogger:     infoLogger,
+		snippets:       &models.SnippetModel{DB: db},
+		templaceCache:  templateCache,
+		formDecoder:    formDecoder,
+		sessionManager: sessionManager,
 	}
 
 	// use custom logger for server
