@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"log"
@@ -27,18 +28,18 @@ type app struct {
 
 var config struct {
 	addr string
-	dsn  string
+	dbDsn  string
 }
 
 func main() {
 	flag.StringVar(&config.addr, "addr", ":5000", "HTTP network address")
-	flag.StringVar(&config.dsn, "dsn", "root:password@/snippetbox?parseTime=true", "MySQL connect name")
+	flag.StringVar(&config.dbDsn, "dsn", "root:password@/snippetbox?parseTime=true", "MySQL connect name")
 	flag.Parse()
 
 	infoLogger := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errLogger := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	db, err := openDB(config.dsn)
+	db, err := openDB(config.dbDsn)
 
 	if err != nil {
 		errLogger.Fatal(err)
@@ -56,6 +57,7 @@ func main() {
 	sessionManager := scs.New()
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
 
 	app := app{
 		errLogger:      errLogger,
@@ -66,15 +68,23 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
-	// use custom logger for server
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
+	// custom config for server
 	srv := &http.Server{
-		Addr:     config.addr,
-		ErrorLog: errLogger,
-		Handler:  app.routes(),
+		Addr:         config.addr,
+		ErrorLog:     errLogger,
+		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	infoLogger.Printf("Started listening on: %s", config.addr)
-	err = srv.ListenAndServe()
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errLogger.Fatal(err)
 }
 
