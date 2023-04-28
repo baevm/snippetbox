@@ -20,13 +20,24 @@ func (app *app) routes() http.Handler {
 	fileServer := http.FileServer(neuteredFileSystem{http.Dir("./ui/static/")})
 	router.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
+	router.Route("/user", func(r chi.Router) {
+		r.Use(app.sessionManager.LoadAndSave, noSurf)
+		r.Get("/signup", app.UserSignup)
+		r.Get("/login", app.UserLogin)
+		r.Post("/signup", app.UserSignupPost)
+		r.Post("/login", app.UserLoginPost)
+		r.Post("/logout", app.UserLogoutPost)
+	})
+
 	// routes with session middleware
 	router.Group(func(r chi.Router) {
-		r.Use(app.sessionManager.LoadAndSave)
+		r.Use(app.sessionManager.LoadAndSave, noSurf)
 		r.Get("/", app.Home)
 		r.Get("/snippet/view/{id}", app.SnippetView)
-		r.Get("/snippet/create", app.SnippetCreate)
-		r.Post("/snippet/create", app.SnippetCreatePost)
+
+		// require auth for creating snippets
+		r.With(app.requireAuth).Get("/snippet/create", app.SnippetCreate)
+		r.With(app.requireAuth).Post("/snippet/create", app.SnippetCreatePost)
 	})
 
 	return router

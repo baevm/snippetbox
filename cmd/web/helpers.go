@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-playground/form/v4"
+	"github.com/justinas/nosurf"
 )
 
 func (app *app) serverError(w http.ResponseWriter, error error) {
@@ -50,8 +51,10 @@ func (app *app) render(w http.ResponseWriter, status int, page string, data *tem
 
 func (app *app) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
-		CurrentYear: time.Now().Year(),
-		Flash:       app.sessionManager.PopString(r.Context(), "Flash"),
+		CurrentYear:     time.Now().Year(),
+		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(r),
+		CSRFToken:       nosurf.Token(r),
 	}
 }
 
@@ -73,6 +76,10 @@ func (app *app) DecodePostForm(r *http.Request, dst any) error {
 	}
 
 	return nil
+}
+
+func (app *app) isAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }
 
 type neuteredFileSystem struct {

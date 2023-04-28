@@ -21,14 +21,15 @@ type app struct {
 	errLogger      *log.Logger
 	infoLogger     *log.Logger
 	snippets       *models.SnippetModel
+	users          *models.UserModel
 	templaceCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
 }
 
 var config struct {
-	addr string
-	dbDsn  string
+	addr  string
+	dbDsn string
 }
 
 func main() {
@@ -63,6 +64,7 @@ func main() {
 		errLogger:      errLogger,
 		infoLogger:     infoLogger,
 		snippets:       &models.SnippetModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templaceCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
@@ -70,6 +72,7 @@ func main() {
 
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+		MinVersion:       tls.VersionTLS13,
 	}
 
 	// custom config for server
