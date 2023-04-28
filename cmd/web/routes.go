@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"snippetbox/ui"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -9,16 +10,16 @@ import (
 func (app *app) routes() http.Handler {
 	router := chi.NewRouter()
 
-	// middlewares
+	// global middlewares
 	router.Use(app.recoverPanic, app.logRequests, headerMiddleware)
 	// custom not found
 	router.NotFound(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 	}))
 
-	// file server that serves static content
-	fileServer := http.FileServer(neuteredFileSystem{http.Dir("./ui/static/")})
-	router.Handle("/static/*", http.StripPrefix("/static", fileServer))
+	// file server with embed filesystem that serves static content
+	fileServer := http.FileServer(http.FS(ui.Files))
+	router.Handle("/static/*", fileServer)
 
 	router.Route("/user", func(r chi.Router) {
 		r.Use(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
