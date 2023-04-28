@@ -21,7 +21,7 @@ func (app *app) routes() http.Handler {
 	router.Handle("/static/*", http.StripPrefix("/static", fileServer))
 
 	router.Route("/user", func(r chi.Router) {
-		r.Use(app.sessionManager.LoadAndSave, noSurf)
+		r.Use(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 		r.Get("/signup", app.UserSignup)
 		r.Get("/login", app.UserLogin)
 		r.Post("/signup", app.UserSignupPost)
@@ -31,7 +31,7 @@ func (app *app) routes() http.Handler {
 
 	// routes with session middleware
 	router.Group(func(r chi.Router) {
-		r.Use(app.sessionManager.LoadAndSave, noSurf)
+		r.Use(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 		r.Get("/", app.Home)
 		r.Get("/snippet/view/{id}", app.SnippetView)
 

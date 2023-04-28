@@ -79,7 +79,13 @@ func (app *app) DecodePostForm(r *http.Request, dst any) error {
 }
 
 func (app *app) isAuthenticated(r *http.Request) bool {
-	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+
+	if !ok {
+		return false
+	}
+
+	return isAuthenticated
 }
 
 type neuteredFileSystem struct {
