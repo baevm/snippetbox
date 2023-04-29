@@ -18,6 +18,7 @@ import (
 )
 
 type app struct {
+	debug          bool
 	errLogger      *log.Logger
 	infoLogger     *log.Logger
 	snippets       models.SnippetRepo
@@ -35,6 +36,7 @@ var config struct {
 func main() {
 	flag.StringVar(&config.addr, "addr", ":5000", "HTTP network address")
 	flag.StringVar(&config.dbDsn, "dsn", "root:password@/snippetbox?parseTime=true", "MySQL connect name")
+	debug := flag.Bool("debug", false, "Debug mode")
 	flag.Parse()
 
 	infoLogger := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -68,6 +70,7 @@ func main() {
 		templaceCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+		debug:          *debug,
 	}
 
 	tlsConfig := &tls.Config{

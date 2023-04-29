@@ -32,13 +32,22 @@ func (app *app) routes() http.Handler {
 		r.Post("/logout", app.UserLogoutPost)
 	})
 
+	router.Route("/account", func(r chi.Router) {
+		r.Use(app.sessionManager.LoadAndSave, noSurf, app.authenticate, app.requireAuth)
+
+		r.Get("/view", app.AccountView)
+		r.Get("/password/update", app.AccountPasswordUpdateView)
+		r.Post("/password/update", app.AccountPasswordUpdate)
+	})
+
 	// routes with session middleware
 	router.Group(func(r chi.Router) {
 		r.Use(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 		r.Get("/", app.Home)
 		r.Get("/snippet/view/{id}", app.SnippetView)
+		r.Get("/about", app.AboutView)
 
-		// require auth for creating snippets
+		// with auth middleware
 		r.With(app.requireAuth).Get("/snippet/create", app.SnippetCreate)
 		r.With(app.requireAuth).Post("/snippet/create", app.SnippetCreatePost)
 	})

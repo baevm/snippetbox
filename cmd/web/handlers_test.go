@@ -107,7 +107,47 @@ func Test_SnippetView(t *testing.T) {
 	}
 }
 
-func TestUserSignup(t *testing.T) {
+func Test_SnippetCreate(t *testing.T) {
+	app := newTestApp(t)
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	t.Run("Unauthenticated", func(t *testing.T) {
+		status, header, _ := ts.get(t, "/snippet/create")
+
+		assert.Equal(t, status, http.StatusSeeOther)
+		assert.Equal(t, header.Get("Location"), "/user/login")
+	})
+
+	t.Run("Authenticated", func(t *testing.T) {
+		_, _, body := ts.get(t, "/user/login")
+
+		csrfToken := extractCsrfToken(t, body)
+
+		const (
+			Name     = "User"
+			Password = "password"
+			Email    = "user@test.com"
+			formTag  = "<form action='/user/login' method='POST' novalidate>"
+		)
+
+		form := url.Values{}
+		form.Add("name", Name)
+		form.Add("password", Password)
+		form.Add("email", Email)
+		form.Add("csrf_token", csrfToken)
+
+		ts.postForm(t, "/user/login", form)
+
+		code, _, body := ts.get(t, "/snippet/create")
+
+		assert.Equal(t, code, http.StatusOK)
+		assert.StringContains(t, body, "<form action='/snippet/create' method='POST'>")
+	})
+
+}
+
+func Test_UserSignup(t *testing.T) {
 	app := newTestApp(t)
 	ts := newTestServer(t, app.routes())
 	defer ts.Close()

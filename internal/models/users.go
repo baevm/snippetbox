@@ -19,13 +19,35 @@ type User struct {
 }
 
 type UserRepo interface {
-	Create(name, email, password string) error 
+	Get(id int) (*User, error)
+	Create(name, email, password string) error
 	Exists(id int) (bool, error)
 	Authenticate(email, password string) (int, error)
+	PasswordUpdate(id int, currentPassword, newPassword string) error
 }
 
 type UserModel struct {
 	DB *sql.DB
+}
+
+func (u *UserModel) Get(id int) (*User, error) {
+	user := &User{}
+
+	query := `SELECT email, name, created from users where id = ?`
+
+	err := u.DB.
+		QueryRow(query, id).
+		Scan(&user.Email, &user.Name, &user.Created)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	return user, nil
 }
 
 func (u *UserModel) Create(name, email, password string) error {
@@ -97,4 +119,39 @@ func (u *UserModel) Authenticate(email, password string) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (u *UserModel) PasswordUpdate(id int, currentPassword, newPassword string) error {
+	var oldHashPass []byte
+
+	query := `
+	SELECT hashed_password from users where id = ?
+	`
+	err := u.DB.
+		QueryRow(query, id).
+		Scan(&oldHashPass)
+
+	if err != nil {
+		return err
+	}
+
+	if err := bcrypt.CompareHashAndPassword(oldHashPass, []byte(currentPassword)); err != nil {
+		return ErrInvalidCredentials
+	}
+
+	newHashedPass, err := bcrypt.GenerateFromPassword([]byte(newPassword), 12)
+
+	if err != nil {
+		return err
+	}
+
+	query = `
+		UPDATE users
+		SET hashed_password = ?
+		where id = ?
+	`
+
+	_, err = u.DB.Exec(query, string(newHashedPass), id)
+
+	return err
 }
