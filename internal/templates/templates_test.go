@@ -1,13 +1,13 @@
 package templates
 
 import (
-	"snippetbox/internal/assert"
+	"snippetbox/internal/tests"
 	"testing"
 	"time"
 )
 
 func Test_humanDate(t *testing.T) {
-	tests := []struct {
+	testCases := []struct {
 		name string
 		tm   time.Time
 		want string
@@ -29,11 +29,11 @@ func Test_humanDate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			hd := HumanDate(tt.tm)
 
-			assert.Equal(t, hd, tt.want)
+			tests.Equal(t, hd, tt.want)
 		})
 	}
 }

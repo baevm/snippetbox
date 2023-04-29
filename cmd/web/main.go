@@ -29,21 +29,21 @@ type App struct {
 	sessionManager *scs.SessionManager
 }
 
-var config struct {
+var flags struct {
 	addr  string
 	dbDsn string
 }
 
 func main() {
-	flag.StringVar(&config.addr, "addr", ":5000", "HTTP network address")
-	flag.StringVar(&config.dbDsn, "dsn", "root:password@/snippetbox?parseTime=true", "MySQL connect name")
+	flag.StringVar(&flags.addr, "addr", ":5000", "HTTP network address")
+	flag.StringVar(&flags.dbDsn, "dsn", "root:password@/snippetbox?parseTime=true", "MySQL connect name")
 	debug := flag.Bool("debug", false, "Debug mode")
 	flag.Parse()
 
 	infoLogger := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errLogger := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	db, err := openDB(config.dbDsn)
+	db, err := openDB(flags.dbDsn)
 
 	if err != nil {
 		errLogger.Fatal(err)
@@ -81,7 +81,7 @@ func main() {
 
 	// custom config for server
 	srv := &http.Server{
-		Addr:         config.addr,
+		Addr:         flags.addr,
 		ErrorLog:     errLogger,
 		Handler:      app.routes(),
 		TLSConfig:    tlsConfig,
@@ -90,7 +90,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	infoLogger.Printf("Started listening on: %s", config.addr)
+	infoLogger.Printf("Started listening on: %s", flags.addr)
 	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errLogger.Fatal(err)
 }

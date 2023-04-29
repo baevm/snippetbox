@@ -1,7 +1,7 @@
 package models
 
 import (
-	"snippetbox/internal/assert"
+	"snippetbox/internal/tests"
 	"testing"
 )
 
@@ -10,7 +10,7 @@ func Test_UserModelExists(t *testing.T) {
 		t.Skip("models: skipping integration test")
 	}
 
-	tests := []struct {
+	testCases := []struct {
 		name   string
 		userID int
 		want   bool
@@ -32,7 +32,7 @@ func Test_UserModelExists(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			db := newTestDb(t)
 
@@ -40,8 +40,8 @@ func Test_UserModelExists(t *testing.T) {
 
 			exists, err := model.Exists(tt.userID)
 
-			assert.Equal(t, exists, tt.want)
-			assert.NilError(t, err)
+			tests.Equal(t, exists, tt.want)
+			tests.NilError(t, err)
 		})
 	}
 }

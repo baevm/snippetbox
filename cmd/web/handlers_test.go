@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"snippetbox/internal/assert"
+	"snippetbox/internal/tests"
 	"testing"
 )
 
@@ -29,7 +29,7 @@ func Test_Ping(t *testing.T) {
 	rs := rr.Result()
 
 	// compare result with expected
-	assert.Equal(t, rs.StatusCode, http.StatusOK)
+	tests.Equal(t, rs.StatusCode, http.StatusOK)
 
 	defer rs.Body.Close()
 	body, err := io.ReadAll(rs.Body)
@@ -39,7 +39,7 @@ func Test_Ping(t *testing.T) {
 	}
 	bytes.TrimSpace(body)
 
-	assert.Equal(t, string(body), "OK")
+	tests.Equal(t, string(body), "OK")
 }
 
 func Test_PingE2E(t *testing.T) {
@@ -50,8 +50,8 @@ func Test_PingE2E(t *testing.T) {
 
 	status, _, body := ts.get(t, "/ping")
 
-	assert.Equal(t, status, http.StatusOK)
-	assert.Equal(t, string(body), "OK")
+	tests.Equal(t, status, http.StatusOK)
+	tests.Equal(t, string(body), "OK")
 }
 
 func Test_SnippetView(t *testing.T) {
@@ -60,7 +60,7 @@ func Test_SnippetView(t *testing.T) {
 	ts := newTestServer(t, app.routes())
 	defer ts.Close()
 
-	tests := []struct {
+	testCases := []struct {
 		name    string
 		url     string
 		expCode int
@@ -94,14 +94,14 @@ func Test_SnippetView(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			code, _, body := ts.get(t, tt.url)
 
-			assert.Equal(t, code, tt.expCode)
+			tests.Equal(t, code, tt.expCode)
 
 			if tt.expBody != "" {
-				assert.StringContains(t, body, tt.expBody)
+				tests.StringContains(t, body, tt.expBody)
 			}
 		})
 	}
@@ -115,8 +115,8 @@ func Test_SnippetCreate(t *testing.T) {
 	t.Run("Unauthenticated", func(t *testing.T) {
 		status, header, _ := ts.get(t, "/snippet/create")
 
-		assert.Equal(t, status, http.StatusSeeOther)
-		assert.Equal(t, header.Get("Location"), "/user/login")
+		tests.Equal(t, status, http.StatusSeeOther)
+		tests.Equal(t, header.Get("Location"), "/user/login")
 	})
 
 	t.Run("Authenticated", func(t *testing.T) {
@@ -141,8 +141,8 @@ func Test_SnippetCreate(t *testing.T) {
 
 		code, _, body := ts.get(t, "/snippet/create")
 
-		assert.Equal(t, code, http.StatusOK)
-		assert.StringContains(t, body, "<form action='/snippet/create' method='POST'>")
+		tests.Equal(t, code, http.StatusOK)
+		tests.StringContains(t, body, "<form action='/snippet/create' method='POST'>")
 	})
 
 }
@@ -163,7 +163,7 @@ func Test_UserSignup(t *testing.T) {
 		formTag  = "<form action='/user/signup' method='POST' novalidate>"
 	)
 
-	tests := []struct {
+	testCases := []struct {
 		name         string
 		userName     string
 		userEmail    string
@@ -244,7 +244,7 @@ func Test_UserSignup(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			form := url.Values{}
 			form.Add("name", tt.userName)
@@ -254,10 +254,10 @@ func Test_UserSignup(t *testing.T) {
 
 			code, _, body := ts.postForm(t, "/user/signup", form)
 
-			assert.Equal(t, code, tt.expCode)
+			tests.Equal(t, code, tt.expCode)
 
 			if tt.expFormTag != "" {
-				assert.StringContains(t, body, tt.expFormTag)
+				tests.StringContains(t, body, tt.expFormTag)
 			}
 		})
 	}
