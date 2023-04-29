@@ -16,8 +16,7 @@ type Snippet struct {
 
 type SnippetRepo interface {
 	Create(title, content string, expires int) (int, error)
-	Get(id int) (int, error)
-	Update(title, content string, expires int) (int, error)
+	Get(id int) (*Snippet, error)
 	Latest() ([]*Snippet, error)
 }
 
@@ -68,10 +67,6 @@ func (s *SnippetModel) Get(id int) (*Snippet, error) {
 	return snip, nil
 }
 
-func (s *SnippetModel) Update(title, content string, expires int) (int, error) {
-	return 0, nil
-}
-
 func (s *SnippetModel) Latest() ([]*Snippet, error) {
 	snippets := []*Snippet{}
 
@@ -106,4 +101,8 @@ func (s *SnippetModel) Latest() ([]*Snippet, error) {
 	}
 
 	return snippets, nil
+}
+
+func (s *SnippetModel) Update(title, content string, expires int) (int, error) {
+	return 0, nil
 }

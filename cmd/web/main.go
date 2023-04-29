@@ -20,8 +20,8 @@ import (
 type app struct {
 	errLogger      *log.Logger
 	infoLogger     *log.Logger
-	snippets       *models.SnippetModel
-	users          *models.UserModel
+	snippets       models.SnippetRepo
+	users          models.UserRepo
 	templaceCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager

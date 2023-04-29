@@ -19,7 +19,7 @@ type User struct {
 }
 
 type UserRepo interface {
-	Create(title, content string, expires int) error
+	Create(name, email, password string) error 
 	Exists(id int) (bool, error)
 	Authenticate(email, password string) (int, error)
 }

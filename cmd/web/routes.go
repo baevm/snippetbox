@@ -17,6 +17,8 @@ func (app *app) routes() http.Handler {
 		app.notFound(w)
 	}))
 
+	router.HandleFunc("/ping", ping)
+
 	// file server with embed filesystem that serves static content
 	fileServer := http.FileServer(http.FS(ui.Files))
 	router.Handle("/static/*", fileServer)
