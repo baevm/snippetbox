@@ -22,14 +22,14 @@ func headerMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (app *app) logRequests(next http.Handler) http.Handler {
+func (app *App) logRequests(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		app.infoLogger.Printf("%s - %s %s %s", r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (app *app) recoverPanic(next http.Handler) http.Handler {
+func (app *App) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -42,7 +42,7 @@ func (app *app) recoverPanic(next http.Handler) http.Handler {
 	})
 }
 
-func (app *app) requireAuth(next http.Handler) http.Handler {
+func (app *App) requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !app.isAuthenticated(r) {
 			app.sessionManager.Put(r.Context(), "redirectURL", r.URL.Path)
@@ -67,7 +67,7 @@ func noSurf(next http.Handler) http.Handler {
 	return csrfHandler
 }
 
-func (app *app) authenticate(next http.Handler) http.Handler {
+func (app *App) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// get id from session
 		id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")

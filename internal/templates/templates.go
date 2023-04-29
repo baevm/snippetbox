@@ -1,4 +1,4 @@
-package main
+package templates
 
 import (
 	"io/fs"
@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type templateData struct {
+type TemplateData struct {
 	Account         *models.User
 	Snippet         *models.Snippet
 	Snippets        []*models.Snippet
@@ -20,7 +20,7 @@ type templateData struct {
 	CSRFToken       string
 }
 
-func humanDate(t time.Time) string {
+func HumanDate(t time.Time) string {
 	if t.IsZero() {
 		return ""
 	}
@@ -29,10 +29,10 @@ func humanDate(t time.Time) string {
 }
 
 var functions = template.FuncMap{
-	"humanDate": humanDate,
+	"humanDate": HumanDate,
 }
 
-func newTemplateCache() (map[string]*template.Template, error) {
+func NewTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 
 	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl.html")
@@ -61,3 +61,24 @@ func newTemplateCache() (map[string]*template.Template, error) {
 
 	return cache, nil
 }
+
+// func (app *App) Render(w http.ResponseWriter, status int, page string, data *TemplateData) {
+// 	ts, ok := app.templateCache[page]
+
+// 	if !ok {
+// 		app.serverError(w, fmt.Errorf("template %s doesnt exist", page))
+// 		return
+// 	}
+
+// 	buf := new(bytes.Buffer)
+
+// 	err := ts.ExecuteTemplate(buf, "base", data)
+
+// 	if err != nil {
+// 		app.serverError(w, err)
+// 		return
+// 	}
+
+// 	w.WriteHeader(status)
+// 	buf.WriteTo(w)
+// }

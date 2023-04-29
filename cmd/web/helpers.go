@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"snippetbox/internal/templates"
 	"time"
 
 	"github.com/go-playground/form/v4"
 	"github.com/justinas/nosurf"
 )
 
-func (app *app) serverError(w http.ResponseWriter, error error) {
+func (app *App) serverError(w http.ResponseWriter, error error) {
 	// get stack trace for current goroutine
 	trace := fmt.Sprintf("%s\n%s", error.Error(), debug.Stack())
 	app.errLogger.Print(2, trace)
@@ -25,16 +26,16 @@ func (app *app) serverError(w http.ResponseWriter, error error) {
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
-func (app *app) clientError(w http.ResponseWriter, status int) {
+func (app *App) clientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }
 
-func (app *app) notFound(w http.ResponseWriter) {
+func (app *App) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
 }
 
-func (app *app) render(w http.ResponseWriter, status int, page string, data *templateData) {
-	ts, ok := app.templaceCache[page]
+func (app *App) render(w http.ResponseWriter, status int, page string, data *templates.TemplateData) {
+	ts, ok := app.templateCache[page]
 
 	if !ok {
 		app.serverError(w, fmt.Errorf("template %s doesnt exist", page))
@@ -54,8 +55,8 @@ func (app *app) render(w http.ResponseWriter, status int, page string, data *tem
 	buf.WriteTo(w)
 }
 
-func (app *app) newTemplateData(r *http.Request) *templateData {
-	return &templateData{
+func (app *App) newTemplateData(r *http.Request) *templates.TemplateData {
+	return &templates.TemplateData{
 		CurrentYear:     time.Now().Year(),
 		Flash:           app.sessionManager.PopString(r.Context(), "flash"),
 		IsAuthenticated: app.isAuthenticated(r),
@@ -63,7 +64,7 @@ func (app *app) newTemplateData(r *http.Request) *templateData {
 	}
 }
 
-func (app *app) DecodePostForm(r *http.Request, dst any) error {
+func (app *App) DecodePostForm(r *http.Request, dst any) error {
 	err := r.ParseForm()
 
 	if err != nil {
@@ -83,7 +84,7 @@ func (app *app) DecodePostForm(r *http.Request, dst any) error {
 	return nil
 }
 
-func (app *app) isAuthenticated(r *http.Request) bool {
+func (app *App) isAuthenticated(r *http.Request) bool {
 	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
 
 	if !ok {

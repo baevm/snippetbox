@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"snippetbox/internal/models"
+	"snippetbox/internal/templates"
 	"text/template"
 	"time"
 
@@ -17,13 +18,13 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type app struct {
+type App struct {
 	debug          bool
 	errLogger      *log.Logger
 	infoLogger     *log.Logger
 	snippets       models.SnippetRepo
 	users          models.UserRepo
-	templaceCache  map[string]*template.Template
+	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
 }
@@ -50,7 +51,7 @@ func main() {
 
 	defer db.Close()
 
-	templateCache, err := newTemplateCache()
+	templateCache, err := templates.NewTemplateCache()
 
 	if err != nil {
 		errLogger.Fatal(err)
@@ -62,12 +63,12 @@ func main() {
 	sessionManager.Lifetime = 12 * time.Hour
 	sessionManager.Cookie.Secure = true
 
-	app := app{
+	app := App{
 		errLogger:      errLogger,
 		infoLogger:     infoLogger,
 		snippets:       &models.SnippetModel{DB: db},
 		users:          &models.UserModel{DB: db},
-		templaceCache:  templateCache,
+		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
 		debug:          *debug,

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"snippetbox/internal/models/mocks"
+	"snippetbox/internal/templates"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
@@ -27,8 +28,8 @@ var csrfTokenMock = regexp.MustCompile(`<input type='hidden' name='csrf_token' v
 
 // loggers needed for middlewares
 // other way it will result in panic
-func newTestApp(t *testing.T) *app {
-	templateCache, err := newTemplateCache()
+func newTestApp(t *testing.T) *App {
+	templateCache, err := templates.NewTemplateCache()
 
 	if err != nil {
 		t.Fatal(err)
@@ -40,12 +41,12 @@ func newTestApp(t *testing.T) *app {
 	sessionManager.Lifetime = 12 * time.Hour
 	sessionManager.Cookie.Secure = true
 
-	return &app{
+	return &App{
 		errLogger:      log.New(io.Discard, "", 0),
 		infoLogger:     log.New(io.Discard, "", 0),
 		users:          &mocks.UserModel{},
 		snippets:       &mocks.SnippetModel{},
-		templaceCache:  templateCache,
+		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (app *app) routes() http.Handler {
+func (app *App) routes() http.Handler {
 	router := chi.NewRouter()
 
 	// global middlewares
